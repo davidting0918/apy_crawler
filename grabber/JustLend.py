@@ -1,7 +1,9 @@
+from datetime import datetime as dt
+
 import requests
 
 
-class JustLendClient(object):
+class JustLend(object):
     def __init__(self):
         self.endpoint = "https://openapi.just.network"
 
@@ -10,24 +12,26 @@ class JustLendClient(object):
         pass
 
     def get_currency_apy(self, currency=None):
+        timestamp = dt.now()
         url = self.endpoint + "/lend/jtoken"
         res = requests.get(url).json()
         data = res["data"]["tokenList"]
 
         # clean data
-        columns = ["symbol", "borrowRate", "supplyRate", "totalBorrows", "totalSupply"]
+        columns = ["underlyingSymbol", "borrowRate", "supplyRate", "totalBorrows", "totalSupply"]
         result = []
         if currency is None:
             for i in data:
-                i["symbol"] = i["symbol"][1:]
-                result.append({column: i[column] for column in columns})
+                currency_result = {column: i[column] for column in columns}
+                currency_result["timestamp"] = timestamp
+                result.append(currency_result)
 
             return result
 
         else:
             currency = currency.upper()
             for i in data:
-                i["symbol"] = i["symbol"][1:]
-                if i["symbol"] == currency:
-                    result.append({column: i[column] for column in columns})
+                if i["underlyingSymbol"] == currency:
+                    result = {column: i[column] for column in columns}
+                    result["timestamp"] = timestamp
                     return result
